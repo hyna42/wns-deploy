@@ -2,7 +2,8 @@ version: "3"
 
 services:
   server:
-    image: hyna42/wns-deploy-server
+    image: hyna42/wns-deploy-server:$TAG
+    pull_policy: always
     command: sh -c "npm run build && npm run prod"
     expose:
       - 5000
@@ -12,7 +13,8 @@ services:
     depends_on:
       - mongodb
   client:
-    image: hyna42/wns-deploy-client
+    image: hyna42/wns-deploy-client:$TAG
+    pull_policy: always
     command: sh -c "npm run build"
     volumes:
       - web-client-build:/app/build
