@@ -51,3 +51,11 @@ jobs:
           file: ./server/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_SERVER_IMAGE_NAME }}:latest
+
+  deploy-prep-prod:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging'
+
+    steps:
+      - name: Call production webhook
+        run: curl -X POST https://ops.hyna.me/hooks/${{secrets.WEBHOOK_ID}}
