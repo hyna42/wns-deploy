@@ -30,7 +30,7 @@ function App() {
     <div>
       <Header>
         <Container>
-          <h1>Test Deploy CD : SHA ok </h1>
+          <h1>Test Deploy CI/CD </h1>
         </Container>
       </Header>
       <Container>
