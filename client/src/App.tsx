@@ -30,7 +30,7 @@ function App() {
     <div>
       <Header>
         <Container>
-          <h1>Test Deploy CI/CD test</h1>
+          <h1>Test Deploy</h1>
         </Container>
       </Header>
       <Container>
