@@ -1,3 +1,11 @@
+name: Build & Push Client + Server images
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
 jobs:
   set-tag:
     runs-on: ubuntu-latest
@@ -5,12 +13,15 @@ jobs:
       sha_short: ${{ steps.vars.outputs.sha_short }}
     steps:
       - uses: actions/checkout@v2
+
       - id: vars
         run: echo "sha_short=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_OUTPUT
 
   build-and-push-client:
     needs: set-tag
     runs-on: ubuntu-latest
+    env:
+      COMMIT_SHORT_SHA: ${{ needs.set-tag.outputs.sha_short }}
     steps:
       - uses: actions/checkout@v2
 
@@ -31,11 +42,13 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_CLIENT_IMAGE_NAME }}:latest
-            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_CLIENT_IMAGE_NAME }}:${{ needs.set-tag.outputs.sha_short }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_CLIENT_IMAGE_NAME }}:${{ env.COMMIT_SHORT_SHA }}
 
   build-and-push-server:
     needs: set-tag
     runs-on: ubuntu-latest
+    env:
+      COMMIT_SHORT_SHA: ${{ needs.set-tag.outputs.sha_short }}
     steps:
       - uses: actions/checkout@v2
 
@@ -56,15 +69,18 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_SERVER_IMAGE_NAME }}:latest
-            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_SERVER_IMAGE_NAME }}:${{ needs.set-tag.outputs.sha_short }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_SERVER_IMAGE_NAME }}:${{ env.COMMIT_SHORT_SHA }}
 
   deploy-prep-prod:
     needs: [build-and-push-client, build-and-push-server, set-tag]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/staging'
+    env:
+      COMMIT_SHORT_SHA: ${{ needs.set-tag.outputs.sha_short }}
     steps:
       - name: Call production webhook
         run: |
+          echo "Trigger deploy for tag: $COMMIT_SHORT_SHA"
           curl -X POST https://ops.hyna.me/hooks/${{ secrets.WEBHOOK_ID }} \
             -H "Content-Type: application/json" \
-            -d '{"after": "${{ needs.set-tag.outputs.sha_short }}"}'
+            -d "{\"after\": \"$COMMIT_SHORT_SHA\"}"
